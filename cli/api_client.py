@@ -7,11 +7,11 @@ OpenFoodFacts integration endpoint.
 
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Optional
 
 import requests
 
-DEFAULT_BASE_URL = "http://127.0.0.1:5000"
+DEFAULT_BASE_URL = "http://127.0.0.1:5000/api"
 
 TIMEOUT = 10
 
@@ -33,6 +33,8 @@ class APIClient:
         endpoint: str,
         **kwargs,
     ) -> Any:
+        """Send an HTTP request and return only the 'data' field."""
+
         url = f"{self.base_url}/{endpoint.lstrip('/')}"
 
         try:
@@ -49,21 +51,23 @@ class APIClient:
                 return None
 
             if response.content:
-
                 payload = response.json()
 
                 if not payload.get("success", True):
                     raise APIClientError(
                         payload.get("message", "API request failed")
                     )
-                
+
                 return payload.get("data")
-            
+
             return None
-        
+
         except requests.exceptions.HTTPError as exc:
             try:
-                message = response.json().get("message", response.text)
+                message = response.json().get(
+                    "message",
+                    response.text,
+                )
             except Exception:
                 message = response.text
 
@@ -84,15 +88,23 @@ class APIClient:
         except requests.exceptions.RequestException as exc:
             raise APIClientError(str(exc)) from exc
 
-    # ---------- Inventory ----------
+    ####################################################
+    # Inventory
+    ####################################################
 
-    def get_items(self) -> List[Dict]:
-        return self._request("GET", "/inventory")
+    def get_items(self) -> Dict:
+        return self._request(
+            "GET",
+            "/inventory",
+        )
 
     def get_item(self, item_id: int) -> Optional[Dict]:
-        return self._request("GET", f"/inventory/{item_id}")
+        return self._request(
+            "GET",
+            f"/inventory/{item_id}",
+        )
 
-    def create_item(self, payload):
+    def create_item(self, payload: Dict) -> Dict:
         return self._request(
             "POST",
             "/inventory",
@@ -101,60 +113,101 @@ class APIClient:
 
     def update_item(
         self,
-        item_id,
-        payload
-    ):
+        item_id: int,
+        payload: Dict,
+    ) -> Dict:
         return self._request(
-            "PUT",
+            "PATCH",      # <-- your Flask route uses PATCH
             f"/inventory/{item_id}",
             json=payload,
         )
 
-    def delete_item(self, item_id):
+    def delete_item(
+        self,
+        item_id: int,
+    ) -> bool:
         self._request(
             "DELETE",
             f"/inventory/{item_id}",
         )
         return True
 
-    # ---------- OpenFoodFacts ----------
+    ####################################################
+    # OpenFoodFacts
+    ####################################################
 
-    def fetch_openfoodfacts(self, query):
+    def fetch_openfoodfacts(
+        self,
+        query: str,
+    ):
         if query.isdigit():
-            endpoint = f"/inventory/search/barcode/{query}"
-        else:
-            endpoint = f"/inventory/search/name/{query}"
+            return self._request(
+                "GET",
+                f"/inventory/search/barcode/{query}",
+            )
+
         return self._request(
-              "GET",
-endpoint
-    )
+            "GET",
+            f"/inventory/search/name/{query}",
+        )
+
+    ####################################################
+    # Import Product
+    ####################################################
+
+    def import_product(
+        self,
+        barcode: str,
+    ):
+        return self._request(
+            "POST",
+            f"/inventory/import/{barcode}",
+        )
+
+    ####################################################
+    # Enriched Inventory
+    ####################################################
+
+    def get_enriched_item(
+        self,
+        item_id: int,
+    ):
+        return self._request(
+            "GET",
+            f"/inventory/enriched/{item_id}",
+        )
 
 
 _client = APIClient()
 
 
-def get_items() -> List[Dict]:
+def get_items():
     return _client.get_items()
 
 
-def get_item(item_id: int) -> Optional[Dict]:
+def get_item(item_id):
     return _client.get_item(item_id)
 
 
-def create_item(payload: Dict) -> Dict:
+def create_item(payload):
     return _client.create_item(payload)
 
 
-def update_item_api(
-    item_id: int,
-    payload: Dict,
-) -> Dict:
+def update_item_api(item_id, payload):
     return _client.update_item(item_id, payload)
 
 
-def delete_item_api(item_id: int) -> bool:
+def delete_item_api(item_id):
     return _client.delete_item(item_id)
 
 
-def fetch_openfoodfacts(query: str) -> Optional[Dict]:
+def fetch_openfoodfacts(query):
     return _client.fetch_openfoodfacts(query)
+
+
+def import_product_api(barcode):
+    return _client.import_product(barcode)
+
+
+def get_enriched_item(item_id):
+    return _client.get_enriched_item(item_id)

@@ -1,42 +1,43 @@
 #!/usr/bin/env python3
 """
 Inventory Management CLI
-
-Entry point for interacting with the Inventory Management REST API.
 """
 
 import sys
 from pathlib import Path
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
+
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
 try:
     from .menu import (
+        main_menu,
+        view_all_items,
+        search_item,
         add_item,
         update_item,
         delete_item,
-        view_all_items,
-        search_item,
         fetch_product,
-        main_menu,
+        import_product,
+        enriched_item,
     )
-except ImportError:  # pragma: no cover - fallback for direct script execution
+except ImportError:
     from cli.menu import (
+        main_menu,
+        view_all_items,
+        search_item,
         add_item,
         update_item,
         delete_item,
-        view_all_items,
-        search_item,
         fetch_product,
-        main_menu,
+        import_product,
+        enriched_item,
     )
 
 
 def run():
-    """Run the CLI application."""
-
     actions = {
         "1": view_all_items,
         "2": search_item,
@@ -44,6 +45,8 @@ def run():
         "4": update_item,
         "5": delete_item,
         "6": fetch_product,
+        "7": import_product,
+        "8": enriched_item,
     }
 
     while True:
@@ -55,15 +58,16 @@ def run():
 
         action = actions.get(choice)
 
-        if action:
-            try:
-                action()
-            except KeyboardInterrupt:
-                print("\nOperation cancelled.")
-            except Exception as exc:
-                print(f"\nError: {exc}")
-        else:
+        if action is None:
             print("\nInvalid option.")
+            continue
+
+        try:
+            action()
+        except KeyboardInterrupt:
+            print("\nOperation cancelled.")
+        except Exception as exc:
+            print(f"\nError: {exc}")
 
 
 if __name__ == "__main__":

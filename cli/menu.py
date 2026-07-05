@@ -10,6 +10,8 @@ try:
         update_item_api,
         delete_item_api,
         fetch_openfoodfacts,
+        import_product_api,
+        get_enriched_item,
     )
 
     from .display import (
@@ -45,25 +47,27 @@ def main_menu():
     print("4. Update inventory item")
     print("5. Delete inventory item")
     print("6. Fetch product from OpenFoodFacts")
+    print("7. Import product from OpenFoodFacts")
+    print("8. View enriched inventory item")
     print("0. Exit")
-    print("=" * 50)
+    print("=" * 60)
 
     return input("Select an option: ").strip()
 
 
 def view_all_items():
     """Display all inventory items."""
-    response = get_items()
 
-    if not response:
+    data = get_items()
+
+    if not data:
         print("\nNo inventory items found.")
         return
 
-    items = response.get("items", [])
-
-    print_items(items)
+    print_items(data.get("items", []))
 def search_item():
     """Display a single inventory item."""
+
     try:
         item_id = int(input("Enter item ID: "))
     except ValueError:
@@ -72,45 +76,35 @@ def search_item():
 
     item = get_item(item_id)
 
-    if not item:
+    if item is None:
         print("Item not found.")
         return
 
     print_item(item)
 
 def add_item():
-    """Prompt user for a new inventory item."""
+    """Create a new inventory item."""
 
     print("\nAdd Inventory Item\n")
 
-    product_name = input("Product Name: ").strip()
-    brand = input("Brand: ").strip()
-    barcode = input("Barcode: ").strip()
-    ingredients = input("Ingredients: ").strip()
-
-    try:
-        stock = int(input("Stock: "))
-        price = float(input("Price: "))
-    except ValueError:
-        print("Stock must be an integer and price must be a number.")
-        return
-
     payload = {
-        "product_name": product_name,
-        "brand": brand,
-        "barcode": barcode,
-        "ingredients": ingredients,
-        "stock": stock,
-        "price": price,
+        "product_name": input("Product Name: ").strip(),
+        "brand": input("Brand: ").strip(),
+        "barcode": input("Barcode: ").strip(),
+        "ingredients": input("Ingredients: ").strip(),
     }
 
-    item = create_item(payload)
+    try:
+        payload["stock"] = int(input("Stock: "))
+        payload["price"] = float(input("Price: "))
+    except ValueError:
+        print("Stock must be an integer.")
+        return
 
-    if item:
-        print("\nItem created successfully.\n")
-        print_item(item)
-    else:
-        print("Failed to create item.")
+    created = create_item(payload)
+
+    print("\nItem created successfully.\n")
+    print_item(created)
 
 def update_item():
     """Update an inventory item."""
@@ -123,70 +117,67 @@ def update_item():
 
     existing = get_item(item_id)
 
-    if not existing:
+    if existing is None:
         print("Item not found.")
         return
 
-    print("\nLeave blank to keep the current value.\n")
+    print("\nLeave blank to keep existing values.\n")
+
+    payload = {}
 
     product_name = input(
         f"Product Name [{existing['product_name']}]: "
     ).strip()
 
+    if product_name:
+        payload["product_name"] = product_name
+
     brand = input(
         f"Brand [{existing['brand']}]: "
     ).strip()
+
+    if brand:
+        payload["brand"] = brand
 
     barcode = input(
         f"Barcode [{existing['barcode']}]: "
     ).strip()
 
+    if barcode:
+        payload["barcode"] = barcode
+
     ingredients = input(
         f"Ingredients [{existing.get('ingredients','')}]: "
     ).strip()
+
+    if ingredients:
+        payload["ingredients"] = ingredients
 
     stock = input(
         f"Stock [{existing['stock']}]: "
     ).strip()
 
+    if stock:
+        payload["stock"] = int(stock)
+
     price = input(
         f"Price [{existing['price']}]: "
     ).strip()
-
-    payload = {}
-
-    if product_name:
-        payload["product_name"] = product_name
-
-    if brand:
-        payload["brand"] = brand
-
-    if barcode:
-        payload["barcode"] = barcode
-
-    if ingredients:
-        payload["ingredients"] = ingredients
-
-    if stock:
-        payload["stock"] = int(stock)
 
     if price:
         payload["price"] = float(price)
 
     updated = update_item_api(
         item_id,
-        payload
+        payload,
     )
 
-    if updated:
-        print("\nItem updated successfully.\n")
-        print_item(updated)
-    else:
-        print("Update failed.")
-
+    print("\nUpdated successfully.\n")
+    print_item(updated)
 
 def delete_item():
     """Delete an inventory item."""
+
     try:
         item_id = int(input("Item ID: "))
     except ValueError:
@@ -194,66 +185,87 @@ def delete_item():
         return
 
     confirm = input(
-        "Are you sure? (y/n): "
-    ).strip().lower()
+        "Delete this item? (y/n): "
+    ).lower()
 
     if confirm != "y":
         print("Cancelled.")
         return
 
-    if delete_item_api(item_id):
-        print("Item deleted successfully.")
-    else:
-        print("Delete failed.")
+    delete_item_api(item_id)
+
+    print("\nItem deleted successfully.")
 
 
 def fetch_product():
-    """Fetch product details from OpenFoodFacts."""
+    """Search OpenFoodFacts."""
 
-    query = input("\nEnter barcode or product name: ").strip()
+    query = input(
+        "\nBarcode or Product Name: "
+    ).strip()
 
     if not query:
-        print("Query cannot be empty.")
         return
 
     result = fetch_openfoodfacts(query)
 
-    if not result:
-        print("Product not found.")
-        return
-
-    # Name search returns multiple products
-    if isinstance(result, dict) and "products" in result:
-        products = result["products"]
+    if query.isdigit():
+        print_product(result)
+    else:
+        products = result.get("products", [])
 
         if not products:
-            print("No matching products found.")
+            print("No products found.")
             return
-
-        print("\nMatching products:\n")
 
         for i, product in enumerate(products, start=1):
             print(
-                f"{i}. {product.get('product_name')} "
-                f"({product.get('brand')})"
+                f"{i}. "
+                f"{product['product_name']} "
+                f"({product['brand']})"
             )
 
-        try:
-            choice = int(
-                input("\nChoose a product (0 to cancel): ")
-            )
-        except ValueError:
-            print("Invalid selection.")
-            return
+        choice = int(
+            input("\nChoose product: ")
+        )
 
-        if choice == 0:
-            return
+        print_product(
+            products[choice - 1]
+        )
 
-        if 1 <= choice <= len(products):
-            print_product(products[choice - 1])
-        else:
-            print("Invalid selection.")
+def import_product():
+    """Import a product into inventory."""
 
+    barcode = input(
+        "\nBarcode: "
+    ).strip()
+
+    if not barcode:
+        return
+
+    item = import_product_api(barcode)
+
+    print("\nImported successfully.\n")
+    print_item(item)
+
+def enriched_item():
+    """Display inventory item with OpenFoodFacts data."""
+
+    try:
+        item_id = int(
+            input("\nInventory ID: ")
+        )
+    except ValueError:
+        print("Invalid ID.")
+        return
+
+    item = get_enriched_item(item_id)
+
+    print("\nInventory Item")
+    print_item(item)
+
+    if item.get("live_data"):
+        print("\nLive OpenFoodFacts Data")
+        print_product(item["live_data"])
     else:
-        # Barcode search returns one product
-        print_product(result)
+        print("\nNo OpenFoodFacts data available.")
