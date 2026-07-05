@@ -33,7 +33,10 @@ def create_app():
     # Register Blueprints
     ####################################################
 
-    app.register_blueprint(inventory_bp)
+    app.register_blueprint(
+        inventory_bp,
+        url_prefix="/api"
+    )
 
     ####################################################
     # Error Handlers

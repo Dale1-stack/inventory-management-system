@@ -4,47 +4,56 @@ Display utilities for the Inventory Management CLI.
 
 from typing import Dict, List, Optional
 
-LINE = "=" * 70
-SEPARATOR = "-" * 70
+LINE = "=" * 80
+SEPARATOR = "-" * 80
 
 
 def print_header(title: str) -> None:
+    """Print a section header."""
     print(f"\n{LINE}")
-    print(title.center(70))
+    print(title.center(80))
     print(LINE)
 
 
+###########################################################
+# SINGLE INVENTORY ITEM
+###########################################################
+
 def print_item(item: Dict) -> None:
-    """Display a single inventory item."""
+    """Display one inventory item."""
 
     if not item:
-        print("\nNo item to display.\n")
+        print("\nNo item found.\n")
         return
 
     print_header("Inventory Item")
 
     print(f"ID           : {item.get('id')}")
-    print(f"Product Name : {item.get('product_name')}")
+    print(f"Product      : {item.get('product_name')}")
     print(f"Brand        : {item.get('brand')}")
-    print(f"Barcode      : {item.get('barcode', 'N/A')}")
-    print(f"Ingredients  : {item.get('ingredients', 'N/A')}")
+    print(f"Barcode      : {item.get('barcode')}")
+    print(f"Ingredients  : {item.get('ingredients')}")
     print(f"Stock        : {item.get('stock')}")
-    print(f"Price        : KES {float(item.get('price', 0)):.2f}")
+    print(f"Price        : ${float(item.get('price', 0)):.2f}")
 
     print(LINE)
 
 
+###########################################################
+# INVENTORY LIST
+###########################################################
+
 def print_items(items: List[Dict]) -> None:
-    """Display all inventory items."""
+    """Display inventory table."""
 
     if not items:
-        print("\nNo inventory items found.\n")
+        print("\nInventory is empty.\n")
         return
 
     print_header("Inventory")
 
     print(
-        "{:<5} {:<30} {:<18} {:>8} {:>12}".format(
+        "{:<4} {:<28} {:<18} {:>8} {:>10}".format(
             "ID",
             "Product",
             "Brand",
@@ -58,22 +67,26 @@ def print_items(items: List[Dict]) -> None:
     for item in items:
 
         print(
-            "{:<5} {:<30} {:<18} {:>8} {:>12}".format(
+            "{:<4} {:<28} {:<18} {:>8} {:>10}".format(
                 item.get("id"),
-                item.get("product_name", "")[:30],
+                item.get("product_name", "")[:28],
                 item.get("brand", "")[:18],
-                item.get("stock", 0),
-                f"KES {float(item.get('price', 0)):.2f}",
+                item.get("stock"),
+                f"${item.get('price',0):.2f}",
             )
         )
 
-    print(LINE)
-    print(f"Total products: {len(items)}")
+    print(SEPARATOR)
+    print(f"Total inventory items: {len(items)}")
     print(LINE)
 
+
+###########################################################
+# OPENFOODFACTS PRODUCT
+###########################################################
 
 def print_product(product: Optional[Dict]) -> None:
-    """Display OpenFoodFacts product information."""
+    """Display OpenFoodFacts product."""
 
     if not product:
         print("\nProduct not found.\n")
@@ -81,33 +94,35 @@ def print_product(product: Optional[Dict]) -> None:
 
     print_header("OpenFoodFacts Product")
 
-    print(f"Product Name : {product.get('product_name', 'Unknown')}")
-    print(f"Brand        : {product.get('brand', 'Unknown')}")
-    print(f"Barcode      : {product.get('barcode', 'Unknown')}")
-    print(f"Categories   : {product.get('categories', 'Unknown')}")
-    print(f"Quantity     : {product.get('quantity', 'Unknown')}")
-    print(f"Ingredients  : {product.get('ingredients', 'Unknown')}")
-    print(f"NutriScore   : {product.get('nutriscore', 'Unknown')}")
+    print(f"Product      : {product.get('product_name')}")
+    print(f"Brand        : {product.get('brand')}")
+    print(f"Barcode      : {product.get('barcode')}")
+    print(f"Ingredients  : {product.get('ingredients')}")
+    print(f"Categories   : {product.get('categories')}")
+    print(f"Quantity     : {product.get('quantity')}")
+    print(f"NutriScore   : {product.get('nutriscore')}")
 
-    image = product.get("image")
-
-    if image:
-        print(f"Image URL    : {image}")
+    if product.get("image"):
+        print(f"Image        : {product['image']}")
 
     print(LINE)
 
 
-def print_success(message: str) -> None:
+###########################################################
+# MESSAGES
+###########################################################
+
+def print_success(message: str):
     print(f"\n✓ {message}\n")
 
 
-def print_error(message: str) -> None:
+def print_error(message: str):
     print(f"\n✗ {message}\n")
 
 
-def print_warning(message: str) -> None:
+def print_warning(message: str):
     print(f"\n! {message}\n")
 
 
-def print_info(message: str) -> None:
+def print_info(message: str):
     print(f"\n> {message}\n")
