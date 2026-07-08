@@ -50,23 +50,23 @@ inventory-management-system/
 +-- requirements.txt
 +-- README.md
 +-- cli/
-¦   +-- api_client.py
-¦   +-- display.py
-¦   +-- inventory_cli.py
-¦   +-- menu.py
+ï¿½   +-- api_client.py
+ï¿½   +-- display.py
+ï¿½   +-- inventory_cli.py
+ï¿½   +-- menu.py
 +-- database/
-¦   +-- inventory.py
+ï¿½   +-- inventory.py
 +-- routes/
-¦   +-- inventory_routes.py
+ï¿½   +-- inventory_routes.py
 +-- services/
-¦   +-- inventory_service.py
-¦   +-- openfoodfacts.py
+ï¿½   +-- inventory_service.py
+ï¿½   +-- openfoodfacts.py
 +-- tests/
-¦   +-- ...
+ï¿½   +-- ...
 +-- utils/
-¦   +-- logger.py
-¦   +-- responses.py
-¦   +-- validators.py
+ï¿½   +-- logger.py
+ï¿½   +-- responses.py
+ï¿½   +-- validators.py
 +-- logs/
 ```
 
@@ -116,7 +116,7 @@ The app uses values from [config.py](config.py) and environment variables where 
 ### Start the Flask API
 
 ```bash
-python app.py
+python3 app.py
 ```
 
 The API will be available at:
@@ -128,7 +128,7 @@ http://127.0.0.1:5000
 ### Start the CLI
 
 ```bash
-python cli/inventory_cli.py
+python3 cli/inventory_cli.py
 ```
 
 ## API Endpoints
