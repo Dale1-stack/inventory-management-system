@@ -95,10 +95,15 @@ def add_item():
     }
 
     try:
-        payload["stock"] = int(input("Stock: "))
-        payload["price"] = float(input("Price: "))
+        payload["stock"] = int(input("Stock: ").strip())
+
+        price_input = input("Price: ").strip()
+        price_input = price_input.replace("$", "")
+
+        payload["price"] = float(price_input)
+
     except ValueError:
-        print("Stock must be an integer.")
+        print("Stock must be an integer and price must be a valid number.")
         return
 
     created = create_item(payload)
